@@ -38,3 +38,5 @@ Then generate a visualization thusly:
 
 This will pop up a print output dialog at some point during the build. You can then print to a PDF
 file and view and print your visualization from there.
+
+[Viztool]: https://github.com/samskivert/viztool
