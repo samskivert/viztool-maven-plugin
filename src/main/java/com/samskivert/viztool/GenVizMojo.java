@@ -12,11 +12,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.awt.print.PageFormat;
-import java.awt.print.Paper;
-import java.awt.print.PrinterException;
-import java.awt.print.PrinterJob;
-
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -27,9 +22,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.FileUtils;
 
-import com.samskivert.swing.util.SwingUtil;
+import com.samskivert.viztool.PrintUtil;
 import com.samskivert.viztool.Visualizer;
-import com.samskivert.viztool.VizFrame;
 import com.samskivert.viztool.clenum.ClassEnumerator;
 import com.samskivert.viztool.clenum.FilterEnumerator;
 import com.samskivert.viztool.clenum.RegexpEnumerator;
@@ -56,7 +50,6 @@ public class GenVizMojo extends AbstractMojo {
     public String mode;
 
     public void execute () throws MojoExecutionException {
-
         // create the classloader we'll use to load FooRecord classes
         List<URL> entries = new ArrayList<URL>();
         for (String entry : _compileClasspath) addEntry(entries, entry);
@@ -111,30 +104,21 @@ public class GenVizMojo extends AbstractMojo {
         viz.setPackageRoot(pkgroot);
         viz.setClasses(classes.iterator());
 
-        // we use the print system to render things
-        PrinterJob job = PrinterJob.getPrinterJob();
+        // create our target directory if needed
+        File projectDir = new File(_project.getBuild().getDirectory());
+        if (!projectDir.isDirectory()) {
+            projectDir.mkdir();
+        }
+        File output = new File(projectDir, _project.getBuild().getFinalName() + ".pdf");
+        // _project.getArtifact().setFile(artifactFile); // TODO: add artifact
 
-        // pop up a dialog to format our pages
-        // PageFormat format = job.pageDialog(job.defaultPage());
-        PageFormat format = job.defaultPage();
-
-        // use sensible margins
-        Paper paper = new Paper();
-        paper.setImageableArea(72*0.5, 72*0.5, 72*7.5, 72*10);
-        format.setPaper(paper);
-
-        // use our configured page format
-        job.setPrintable(viz, format);
-
-        // pop up a dialog to control printing
-        if (job.printDialog()) {
-            try {
-                job.print(); // invoke the printing process
-            } catch (PrinterException pe) {
-                getLog().warn("Printer error", pe);
+        try {
+            getLog().info("Generating viz at " + output.getPath());
+            if (!PrintUtil.print(viz, output)) {
+                getLog().info("Printing cancelled.");
             }
-        } else {
-            getLog().info("Printing cancelled.");
+        } catch (Exception e) {
+            throw new MojoExecutionException("Printing failed.", e);
         }
     }
 
