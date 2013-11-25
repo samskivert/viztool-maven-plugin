@@ -51,6 +51,10 @@ public class GenVizMojo extends AbstractMojo {
     @Parameter(property="regexp")
     public String regexp;
 
+    /** Selects the visualization mode: {@code hierarchy} or {@code summary}. */
+    @Parameter(property="mode", defaultValue="hierarchy")
+    public String mode;
+
     public void execute () throws MojoExecutionException {
 
         // create the classloader we'll use to load FooRecord classes
@@ -96,8 +100,14 @@ public class GenVizMojo extends AbstractMojo {
             }
         }
 
-        Visualizer viz = new HierarchyVisualizer();
-        // Visualizer viz = new SummaryVisualizer();
+        Visualizer viz;
+        if ("hierarchy".equalsIgnoreCase(mode)) {
+            viz = new HierarchyVisualizer();
+        } else if ("summary".equalsIgnoreCase(mode)) {
+            viz = new SummaryVisualizer();
+        } else {
+            throw new MojoExecutionException("Unknown visualization mode: " + mode);
+        }
         viz.setPackageRoot(pkgroot);
         viz.setClasses(classes.iterator());
 
